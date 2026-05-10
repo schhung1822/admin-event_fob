@@ -113,7 +113,7 @@ export function RecentOrders() {
       <CardContent className="flex flex-col gap-4 px-0">
         <div className="flex items-center justify-between px-4">
           <ToggleGroup
-            className="bg-muted p-0.75 text-muted-foreground **:data-[slot=toggle-group-item]:rounded-md **:data-[slot=toggle-group-item]:border **:data-[slot=toggle-group-item]:border-transparent **:data-[slot=toggle-group-item]:text-foreground/60 **:data-[slot=toggle-group-item]:hover:text-foreground [&_[data-slot=toggle-group-item][data-state=on]]:bg-background [&_[data-slot=toggle-group-item][data-state=on]]:text-foreground [&_[data-slot=toggle-group-item][data-state=on]]:shadow-sm dark:[&_[data-slot=toggle-group-item][data-state=on]]:border-input dark:[&_[data-slot=toggle-group-item][data-state=on]]:bg-input/30"
+            className="bg-muted p-0.75 text-muted-foreground **:data-[slot=toggle-group-item]:rounded-md **:data-[slot=toggle-group-item]:border **:data-[slot=toggle-group-item]:border-transparent **:data-[slot=toggle-group-item]:text-foreground/60 **:data-[slot=toggle-group-item]:hover:text-foreground [&_[data-slot=toggle-group-item][data-pressed]]:bg-background [&_[data-slot=toggle-group-item][data-pressed]]:text-foreground [&_[data-slot=toggle-group-item][data-pressed]]:shadow-sm dark:[&_[data-slot=toggle-group-item][data-pressed]]:border-input dark:[&_[data-slot=toggle-group-item][data-pressed]]:bg-input/30"
             onValueChange={(value) => {
               const filter = value[0] as OrderFilter | undefined;
               if (!filter) return;
