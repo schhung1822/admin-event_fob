@@ -51,20 +51,21 @@ Most admin templates I found, free or paid, felt cluttered, outdated, or too rig
 - Finance Dashboard  
 - Analytics Dashboard  
 - Productivity Dashboard  
-- Authentication (4 screens)  
-- Legacy: Default v1, CRM v1, Finance v1, Analytics v1
-
-### Coming Soon
 - E-commerce Dashboard  
 - Academy Dashboard  
 - Logistics Dashboard  
 - Email Page  
 - Chat Page  
 - Calendar Page  
-- Kanban Board  
-- Invoice Page  
-- Users Management  
-- Roles Management  
+- Kanban Board
+- Invoice Page
+- Users Management
+- Roles Management
+- Authentication (4 screens)
+- Legacy: Default v1, CRM v1, Finance v1, Analytics v1
+
+### Planned
+- I've added all the planned screens. Feel free to open an issue for requesting something specific.
 
 ## Colocation File System Architecture
 
