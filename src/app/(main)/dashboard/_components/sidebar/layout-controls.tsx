@@ -59,45 +59,45 @@ export function LayoutControls() {
 
   const getSingleToggleValue = <T extends string>(groupValue: string[]) => groupValue[0] as T | undefined;
 
-  const onThemePresetChange = async (preset: ThemePreset) => {
+  const onThemePresetChange = (preset: ThemePreset) => {
     applyThemePreset(preset);
     setThemePreset(preset);
-    persistPreference("theme_preset", preset);
+    void persistPreference("theme_preset", preset);
   };
 
-  const onThemeModeChange = async (mode: ThemeMode) => {
+  const onThemeModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
-    persistPreference("theme_mode", mode);
+    void persistPreference("theme_mode", mode);
   };
 
-  const onContentLayoutChange = async (layout: ContentLayout) => {
+  const onContentLayoutChange = (layout: ContentLayout) => {
     applyContentLayout(layout);
     setContentLayout(layout);
-    persistPreference("content_layout", layout);
+    void persistPreference("content_layout", layout);
   };
 
-  const onNavbarStyleChange = async (style: NavbarStyle) => {
+  const onNavbarStyleChange = (style: NavbarStyle) => {
     applyNavbarStyle(style);
     setNavbarStyle(style);
-    persistPreference("navbar_style", style);
+    void persistPreference("navbar_style", style);
   };
 
-  const onSidebarStyleChange = async (value: SidebarVariant) => {
+  const onSidebarStyleChange = (value: SidebarVariant) => {
     setSidebarVariant(value);
     applySidebarVariant(value);
-    persistPreference("sidebar_variant", value);
+    void persistPreference("sidebar_variant", value);
   };
 
-  const onSidebarCollapseModeChange = async (value: SidebarCollapsible) => {
+  const onSidebarCollapseModeChange = (value: SidebarCollapsible) => {
     setSidebarCollapsible(value);
     applySidebarCollapsible(value);
-    persistPreference("sidebar_collapsible", value);
+    void persistPreference("sidebar_collapsible", value);
   };
 
-  const onFontChange = async (value: FontKey) => {
+  const onFontChange = (value: FontKey) => {
     applyFont(value);
     setFont(value);
-    persistPreference("font", value);
+    void persistPreference("font", value);
   };
 
   const handleRestore = () => {

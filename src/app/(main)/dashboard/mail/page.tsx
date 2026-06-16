@@ -15,7 +15,9 @@ export default function Page() {
           </p>
         </div>
         <Button
-          render={<Link href="/mail" target="_blank" rel="noreferrer" aria-label="Open mail in new tab" />}
+          render={
+            <Link href="/mail" target="_blank" rel="noreferrer" prefetch={false} aria-label="Open mail in new tab" />
+          }
           nativeButton={false}
           variant="ghost"
           size="icon-sm"
