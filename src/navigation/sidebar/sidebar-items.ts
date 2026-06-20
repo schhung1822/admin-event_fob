@@ -14,6 +14,7 @@ import {
   Mail,
   MessageSquare,
   ReceiptText,
+  Server,
   ShoppingBag,
   SquareArrowUpRight,
   Users,
@@ -130,6 +131,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Roles",
         url: "/dashboard/roles",
         icon: Lock,
+      },
+      {
+        title: "Infrastructure",
+        url: "/dashboard/infrastructure",
+        icon: Server,
       },
       {
         title: "Authentication",
