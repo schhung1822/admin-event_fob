@@ -49,6 +49,7 @@ const statusOptions = [
   { value: "Inactive", label: "Inactive" },
   { value: "Unsubscribed", label: "Unsubscribed" },
 ] as const;
+
 const billingOptions = [
   { value: "all", label: "All" },
   { value: "Paid", label: "Paid" },
@@ -56,17 +57,27 @@ const billingOptions = [
   { value: "Overdue", label: "Overdue" },
   { value: "Trial", label: "Trial" },
 ] as const;
+
 const joinedDateOptions = [
   { value: "all", label: "All time" },
   { value: "30", label: "Last 30 days" },
   { value: "90", label: "Last 90 days" },
 ] as const;
+
 const sortOptions = [
   { value: "newest", label: "Newest first" },
   { value: "oldest", label: "Oldest first" },
   { value: "name-asc", label: "Name A-Z" },
   { value: "name-desc", label: "Name Z-A" },
 ] as const;
+
+const sortOptionState = {
+  newest: [{ id: "joined", desc: true }],
+  oldest: [{ id: "joined", desc: false }],
+  "name-asc": [{ id: "name", desc: false }],
+  "name-desc": [{ id: "name", desc: true }],
+} satisfies Record<(typeof sortOptions)[number]["value"], SortingState>;
+
 const pageSizeItems = [10, 20, 30, 40, 50].map((pageSize) => ({
   value: `${pageSize}`,
   label: `${pageSize}`,
@@ -213,16 +224,7 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
               <DropdownMenuRadioGroup
                 value={sortValue}
                 onValueChange={(value) => {
-                  const nextSorting: SortingState =
-                    value === "oldest"
-                      ? [{ id: "joined", desc: false }]
-                      : value === "name-asc"
-                        ? [{ id: "name", desc: false }]
-                        : value === "name-desc"
-                          ? [{ id: "name", desc: true }]
-                          : [{ id: "joined", desc: true }];
-
-                  table.setSorting(nextSorting);
+                  table.setSorting(sortOptionState[value as keyof typeof sortOptionState] ?? sortOptionState.newest);
                   table.setPageIndex(0);
                 }}
               >
