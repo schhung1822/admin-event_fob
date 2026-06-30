@@ -4,7 +4,7 @@
 
 Studio Admin is a responsive admin dashboard built with Next.js 16, React 19, TypeScript, Tailwind CSS v4, and shadcn/ui.
 
-This repository uses the shadcn `base-nova` style. When the shadcn CLI reports `base: "base"`, it refers to Base UI. Follow the APIs used by the local components in `src/components/ui/`.
+This repository uses the shadcn `base-nova` style. When the shadcn CLI reports `base: "base"`, it refers to Base UI. Always inspect the local components in `src/components/ui/` because individual wrappers may use different primitives.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
@@ -67,7 +67,7 @@ Keep a component inside its route until it is reused by another feature. Do not 
 
 ## Creating or extending a screen
 
-1. Inspect the closest existing screens before writing code. Finance, Infrastructure, CRM, and Analytics are useful references for different kinds of dashboard content.
+1. Inspect the closest current screen before writing code. Finance, Infrastructure, CRM, and Analytics are useful references. Do not use routes under `(legacy)` as references for new screens unless maintaining a legacy route.
 2. When reproducing a UI from a screenshot or image, follow its visual direction closely, including layout, hierarchy, spacing, component structure, and important details. Implement it with the project's existing components and semantic theme tokens rather than copying raw color values. If the design needs a color that is not available through the existing theme tokens, or the user explicitly requests a non-theme color, use a named color from Tailwind's default palette. Do not use arbitrary hex, RGB, HSL, or OKLCH values.
 3. Reuse the existing dashboard shell, local components, layout controls, and theme tokens.
 4. Break each new page into focused components inside the route's `_components/` directory. Keep `page.tsx` small and focused on composing those pieces.
