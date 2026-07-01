@@ -84,10 +84,7 @@ export function AnalyticsOverview() {
   });
   const [selectedFilters, setSelectedFilters] = React.useState<FilterToggleKey[]>(["includeRenewals"]);
 
-  const revenueSeries = React.useMemo(
-    () => buildRevenueChartData(dateRange.from, dateRange.to),
-    [dateRange.from, dateRange.to],
-  );
+  const [revenueSeries, setRevenueSeries] = React.useState(() => buildRevenueChartData(dateRange.from, dateRange.to));
 
   const handleFilterToggle = (key: FilterToggleKey, checked: boolean) => {
     setSelectedFilters((prev) => {
@@ -102,7 +99,9 @@ export function AnalyticsOverview() {
     if (!value?.from || !value?.to) {
       return;
     }
-    setDateRange({ from: value.from, to: value.to });
+    const nextDateRange = { from: value.from, to: value.to };
+    setDateRange(nextDateRange);
+    setRevenueSeries(buildRevenueChartData(nextDateRange.from, nextDateRange.to));
   };
   return (
     <div className="grid gap-4">
@@ -216,11 +215,20 @@ function SummaryRow({ revenueSeries }: { revenueSeries: Array<{ day: string; rev
 function RiskViewSelect() {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("risk-view");
+  const listId = React.useId();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        render={<Button variant="outline" role="combobox" aria-expanded={open} className="w-54 justify-between" />}
+        render={
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-controls={listId}
+            aria-expanded={open}
+            className="w-54 justify-between"
+          />
+        }
       >
         <div className="flex items-center gap-2">
           <div
@@ -235,7 +243,7 @@ function RiskViewSelect() {
       </PopoverTrigger>
       <PopoverContent className="w-54 p-0">
         <Command>
-          <CommandList>
+          <CommandList id={listId}>
             <CommandGroup>
               {riskViews.map((view) => (
                 <CommandItem

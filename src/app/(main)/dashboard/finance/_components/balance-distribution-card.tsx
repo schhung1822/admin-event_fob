@@ -90,9 +90,10 @@ const chartData = balanceData.map((item) => ({
   fill: getAccountColor(item.key),
 }));
 
+const totalBalance = balanceData.reduce((total, item) => total + item.amount, 0);
+
 export function BalanceDistributionCard() {
   const [currency, setCurrency] = React.useState<Currency>("USD");
-  const totalBalance = React.useMemo(() => balanceData.reduce((total, item) => total + item.amount, 0), []);
 
   return (
     <Card>
