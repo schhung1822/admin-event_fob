@@ -1,0 +1,29 @@
+﻿export type OrderRow = {
+  id: number;
+  ordercode: string;
+  create_time: string;
+  payment_time: string;
+  checkin_time: string;
+  name: string;
+  phone: string;
+  email: string;
+  gender: string;
+  class: string;
+  money: number;
+  status: string;
+  is_gift: number;
+  is_checkin: number;
+  number_checkin: number;
+  career: string;
+  brand: string;
+  source: string;
+  ref: string;
+  voucher: string;
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+  step_mail: number | null;
+  step_zbs: number | null;
+};
+
+export type OrderFormMode = "create" | "edit";

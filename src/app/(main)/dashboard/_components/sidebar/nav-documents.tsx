@@ -51,7 +51,7 @@ export function NavDocuments({
                 render={<SidebarMenuAction showOnHover className="rounded-sm data-popup-open:bg-accent" />}
               >
                 <Ellipsis />
-                <span className="sr-only">More</span>
+                <span className="sr-only">Xem Thêm</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-24 rounded-lg"
@@ -60,16 +60,16 @@ export function NavDocuments({
               >
                 <DropdownMenuItem>
                   <Folder />
-                  <span>Open</span>
+                  <span>Mở</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Forward />
-                  <span>Share</span>
+                  <span>Chía sẻ</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive">
                   <Trash2 />
-                  <span>Delete</span>
+                  <span>Xóa</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -78,7 +78,7 @@ export function NavDocuments({
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
             <Ellipsis className="text-sidebar-foreground/70" />
-            <span>More</span>
+            <span>Xem thêm</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>

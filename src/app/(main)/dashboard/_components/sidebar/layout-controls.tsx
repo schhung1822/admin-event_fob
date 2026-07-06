@@ -69,12 +69,12 @@ export function LayoutControls() {
       <PopoverContent align="end">
         <div className="flex flex-col gap-5">
           <div className="space-y-1.5">
-            <h4 className="font-medium text-sm leading-none">Preferences</h4>
-            <p className="text-muted-foreground text-xs">Customize your dashboard layout preferences.</p>
+            <h4 className="font-medium text-sm leading-none">Tùy chọn</h4>
+            <p className="text-muted-foreground text-xs">Tùy chỉnh giao diện bố cục bảng điều khiển theo ý muốn.</p>
           </div>
           <div className="space-y-3 **:data-[slot=toggle-group]:w-full **:data-[slot=toggle-group-item]:flex-1 **:data-[slot=toggle-group-item]:text-xs">
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Theme Preset</Label>
+              <Label className="font-medium text-xs">Thiết lập chủ đề</Label>
               <Select
                 items={themePresetItems}
                 value={themePreset}
@@ -108,7 +108,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Fonts</Label>
+              <Label className="font-medium text-xs">Phông chữ</Label>
               <Select
                 items={fontItems}
                 value={font}
@@ -133,7 +133,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Theme Mode</Label>
+              <Label className="font-medium text-xs">Chế độ chủ đề</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -145,19 +145,19 @@ export function LayoutControls() {
                 }}
               >
                 <ToggleGroupItem value="light" aria-label="Toggle light">
-                  Light
+                  Sáng
                 </ToggleGroupItem>
                 <ToggleGroupItem value="dark" aria-label="Toggle dark">
-                  Dark
+                  Tối
                 </ToggleGroupItem>
                 <ToggleGroupItem value="system" aria-label="Toggle system">
-                  System
+                  Hệ thống
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Page Layout</Label>
+              <Label className="font-medium text-xs">Bố cục trang</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -178,7 +178,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Navbar Behavior</Label>
+              <Label className="font-medium text-xs">Thanh điều hướng</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -199,7 +199,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Sidebar Style</Label>
+              <Label className="font-medium text-xs">Kiểu thanh bên</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -223,7 +223,7 @@ export function LayoutControls() {
             </div>
 
             <div className="space-y-1">
-              <Label className="font-medium text-xs">Sidebar Collapse Mode</Label>
+              <Label className="font-medium text-xs">Chế độ thu gọn thanh bên</Label>
               <ToggleGroup
                 size="sm"
                 spacing={0}
@@ -244,7 +244,7 @@ export function LayoutControls() {
             </div>
 
             <Button type="button" size="sm" variant="outline" className="w-full text-xs" onClick={resetPreferences}>
-              Restore Defaults
+              Khôi phục mặc định
             </Button>
           </div>
         </div>
