@@ -1,11 +1,13 @@
 ﻿"use server";
 
 import { revalidatePath } from "next/cache";
+
 import type { RowDataPacket } from "mysql2";
 
 import { getDatabasePool } from "@/lib/db";
 
 const ORDERS_PATH = "/dashboard/orders";
+const PAYMENT_WEBHOOK_URL = "https://nextg.nextgency.vn/webhook/fob/update-payment";
 
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -21,6 +23,11 @@ function getMoney(formData: FormData) {
   return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
 }
 
+function getQuantity(formData: FormData) {
+  const value = getInteger(formData, "quantity");
+  return Math.min(Math.max(value, 1), 500);
+}
+
 function getVietnamNowString() {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -34,28 +41,61 @@ function getVietnamNowString() {
   }).format(new Date());
 }
 
-function generateOrderCode() {
-  return `AD${Math.floor(Math.random() * 1_000_000)
+function generateCode(prefix: "AD" | "DH") {
+  return `${prefix}${Math.floor(Math.random() * 1_000_000)
     .toString()
     .padStart(6, "0")}`;
 }
 
-async function generateUniqueOrderCode() {
+async function generateUniqueCode(
+  column: "ordercode" | "order_id",
+  prefix: "AD" | "DH",
+  reservedCodes = new Set<string>(),
+) {
   const pool = getDatabasePool();
 
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    const orderCode = generateOrderCode();
+    const code = generateCode(prefix);
+
+    if (reservedCodes.has(code)) {
+      continue;
+    }
+
     const [rows] = await pool.query<Array<RowDataPacket & { id: number }>>(
-      "SELECT id FROM orders WHERE ordercode = ? LIMIT 1",
-      [orderCode],
+      `SELECT id FROM orders WHERE ${column} = ? LIMIT 1`,
+      [code],
     );
 
     if (rows.length === 0) {
-      return orderCode;
+      return code;
     }
   }
 
-  throw new Error("Không thể tạo mã vé không trùng. Vui lòng thử lại.");
+  throw new Error("Khong the tao ma khong trung. Vui long thu lai.");
+}
+
+async function sendPaymentWebhook({
+  orderId,
+  totalMoney,
+  transactionDate,
+}: {
+  orderId: string;
+  totalMoney: number;
+  transactionDate: string;
+}) {
+  const response = await fetch(PAYMENT_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      transactionDate,
+      code: orderId,
+      transferAmount: totalMoney,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Payment webhook failed with status ${response.status}.`);
+  }
 }
 
 function getGiftState(formData: FormData) {
@@ -67,32 +107,72 @@ function getGender(formData: FormData) {
   return gender === "none" ? "" : gender;
 }
 
+function normalizeStatus(value: string | null | undefined) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
+}
+
+function getPaymentStatus(formData: FormData) {
+  const status = normalizeStatus(getString(formData, "status"));
+
+  if (status === "paydone" || status === "paid") {
+    return status;
+  }
+
+  return "new";
+}
+
 export async function createOrderAction(formData: FormData) {
   const pool = getDatabasePool();
   const now = getVietnamNowString();
   const isGift = getGiftState(formData);
   const money = isGift ? 0 : getMoney(formData);
+  const quantity = getQuantity(formData);
+  const totalMoney = money * quantity;
+  const orderId = await generateUniqueCode("order_id", "DH");
+  const usedOrderCodes = new Set<string>();
+  const orderCodes: string[] = [];
+
+  for (let index = 0; index < quantity; index += 1) {
+    const code = await generateUniqueCode("ordercode", "AD", usedOrderCodes);
+    usedOrderCodes.add(code);
+    orderCodes.push(code);
+  }
 
   await pool.query(
     `
       INSERT INTO orders (
-        ordercode, create_time, update_time, name, phone, email, gender, class, money, status,
+        order_id, ordercode, create_time, update_time, name, phone, email, gender, class, money, status,
         is_gift, is_checkin, number_checkin, send_noti
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'paydone', ?, 0, 0, 0)
+      ) VALUES ?
     `,
     [
-      await generateUniqueOrderCode(),
-      now,
-      now,
-      getString(formData, "name"),
-      getString(formData, "phone"),
-      getString(formData, "email"),
-      getGender(formData),
-      getString(formData, "class"),
-      money,
-      isGift ? 1 : 0,
+      orderCodes.map((orderCode) => [
+        orderId,
+        orderCode,
+        now,
+        now,
+        getString(formData, "name"),
+        getString(formData, "phone"),
+        getString(formData, "email"),
+        getGender(formData),
+        getString(formData, "class"),
+        money,
+        "paydone",
+        isGift ? 1 : 0,
+        0,
+        0,
+        0,
+      ]),
     ],
   );
+
+  await sendPaymentWebhook({
+    orderId,
+    totalMoney,
+    transactionDate: now,
+  });
 
   revalidatePath(ORDERS_PATH);
 }
@@ -104,19 +184,53 @@ export async function updateOrderAction(formData: FormData) {
     throw new Error("Missing order id.");
   }
 
+  const pool = getDatabasePool();
   const isGift = getGiftState(formData);
   const isCheckin = getInteger(formData, "is_checkin") === 1;
+  const nextStatus = getPaymentStatus(formData);
+  const nextMoney = isGift ? 0 : getMoney(formData);
+  const [existingRows] = await pool.query<
+    Array<
+      RowDataPacket & {
+        create_time: string;
+        money: string | number | null;
+        order_id: string | null;
+        status: string | null;
+      }
+    >
+  >(
+    `
+      SELECT
+        COALESCE(DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%s'), ?) AS create_time,
+        money,
+        order_id,
+        status
+      FROM orders
+      WHERE id = ?
+      LIMIT 1
+    `,
+    [getVietnamNowString(), id],
+  );
+  const existingOrder = existingRows[0];
 
-  await getDatabasePool().query(
+  if (!existingOrder) {
+    throw new Error("Order not found.");
+  }
+
+  const orderId = existingOrder.order_id || (await generateUniqueCode("order_id", "DH"));
+
+  await pool.query(
     `
       UPDATE orders
       SET
+        order_id = CASE WHEN COALESCE(TRIM(order_id), '') = '' THEN ? ELSE order_id END,
         name = ?,
         phone = ?,
         email = ?,
         gender = ?,
         class = ?,
         money = ?,
+        status = ?,
         is_gift = ?,
         is_checkin = ?,
         number_checkin = CASE WHEN ? = 1 THEN GREATEST(COALESCE(number_checkin, 0), 1) ELSE 0 END,
@@ -125,12 +239,14 @@ export async function updateOrderAction(formData: FormData) {
       LIMIT 1
     `,
     [
+      orderId,
       getString(formData, "name"),
       getString(formData, "phone"),
       getString(formData, "email"),
       getGender(formData),
       getString(formData, "class"),
-      isGift ? 0 : getMoney(formData),
+      nextMoney,
+      nextStatus,
       isGift ? 1 : 0,
       isCheckin ? 1 : 0,
       isCheckin ? 1 : 0,
@@ -139,6 +255,21 @@ export async function updateOrderAction(formData: FormData) {
       id,
     ],
   );
+
+  if (normalizeStatus(existingOrder.status) !== "paydone" && nextStatus === "paydone") {
+    let totalMoney = nextMoney;
+    const [totalRows] = await pool.query<Array<RowDataPacket & { total_money: string | number | null }>>(
+      "SELECT COALESCE(SUM(COALESCE(money, 0)), 0) AS total_money FROM orders WHERE order_id = ?",
+      [orderId],
+    );
+    totalMoney = Number(totalRows[0]?.total_money ?? nextMoney);
+
+    await sendPaymentWebhook({
+      orderId,
+      totalMoney,
+      transactionDate: existingOrder.create_time,
+    });
+  }
 
   revalidatePath(ORDERS_PATH);
 }

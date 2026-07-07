@@ -1,10 +1,10 @@
 ﻿import type { RowDataPacket } from "mysql2";
 
-import { OrdersTable } from "./_components/orders-table";
-import type { OrderRow } from "./_components/schema";
-
 import { Badge } from "@/components/ui/badge";
 import { getDatabasePool } from "@/lib/db";
+
+import { OrdersTable } from "./_components/orders-table";
+import type { OrderRow } from "./_components/schema";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,6 +15,7 @@ async function getOrders() {
   const [rows] = await getDatabasePool().query<OrderDbRow[]>(`
     SELECT
       id,
+      COALESCE(order_id, '') AS order_id,
       COALESCE(ordercode, '') AS ordercode,
       COALESCE(DATE_FORMAT(create_time, '%Y-%m-%d %H:%i:%s'), '') AS create_time,
       COALESCE(DATE_FORMAT(update_time, '%Y-%m-%d %H:%i:%s'), '') AS payment_time,
@@ -68,21 +69,21 @@ export default async function Page() {
       <div className="grid gap-4 px-4 lg:grid-cols-3 lg:px-6">
         <div className="rounded-lg border p-4">
           <div className="text-muted-foreground text-sm">Vé đăng ký</div>
-          <div className="mt-2 font-heading text-2xl font-semibold">{orders.length}</div>
+          <div className="mt-2 font-heading font-semibold text-2xl">{orders.length}</div>
           <Badge variant="outline" className="mt-3">
             Hiển thị tối đa 500 dòng
           </Badge>
         </div>
         <div className="rounded-lg border p-4">
           <div className="text-muted-foreground text-sm">Đã thanh toán</div>
-          <div className="mt-2 font-heading text-2xl font-semibold">{paidCount}</div>
+          <div className="mt-2 font-heading font-semibold text-2xl">{paidCount}</div>
           <Badge variant="outline" className="mt-3">
             Theo trạng thái paydone
           </Badge>
         </div>
         <div className="rounded-lg border p-4">
           <div className="text-muted-foreground text-sm">Doanh thu bán vé</div>
-          <div className="mt-2 font-heading text-2xl font-semibold">
+          <div className="mt-2 font-heading font-semibold text-2xl">
             {new Intl.NumberFormat("vi-VN", {
               currency: "VND",
               maximumFractionDigits: 0,

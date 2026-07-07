@@ -1,17 +1,20 @@
 ﻿"use client";
 
 import * as React from "react";
+
 import { SaveIcon } from "lucide-react";
+import { useFormStatus } from "react-dom";
+import { toast } from "sonner";
 
-import { createOrderAction, updateOrderAction } from "../actions";
-import type { OrderFormMode, OrderRow } from "./schema";
-
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+
+import { createOrderAction, updateOrderAction } from "../actions";
+import type { OrderFormMode, OrderRow } from "./schema";
 
 const genderItems = [
   { value: "none", label: "Không chọn" },
@@ -30,16 +33,13 @@ const checkinItems = [
   { value: "0", label: "Chưa check-in" },
   { value: "1", label: "Đã check-in" },
 ] as const;
+const paymentStatusItems = [
+  { value: "new", label: "new" },
+  { value: "paydone", label: "paydone" },
+  { value: "paid", label: "paid" },
+] as const;
 
-function Field({
-  children,
-  label,
-  name,
-}: {
-  children: React.ReactNode;
-  label: string;
-  name: string;
-}) {
+function Field({ children, label, name }: { children: React.ReactNode; label: string; name: string }) {
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={name}>{label}</Label>
@@ -57,6 +57,17 @@ function Section({ children, title }: { children: React.ReactNode; title: string
       </div>
       {children}
     </section>
+  );
+}
+
+function SubmitButton({ children, pendingLabel }: { children: React.ReactNode; pendingLabel: string }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-fit" disabled={pending}>
+      {pending ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
+      {pending ? pendingLabel : children}
+    </Button>
   );
 }
 
@@ -111,12 +122,22 @@ function formatMoneyInput(value: string | number | undefined) {
   return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Number(digits));
 }
 
-function MoneyInput({ defaultValue, disabled }: { defaultValue?: number; disabled?: boolean }) {
+function MoneyInput({
+  defaultValue,
+  disabled,
+  onValueChange,
+}: {
+  defaultValue?: number;
+  disabled?: boolean;
+  onValueChange?: (value: number) => void;
+}) {
   const [rawValue, setRawValue] = React.useState(() => String(defaultValue ?? 0));
 
   React.useEffect(() => {
-    setRawValue(disabled ? "0" : String(defaultValue ?? 0));
-  }, [defaultValue, disabled]);
+    const nextValue = disabled ? "0" : String(defaultValue ?? 0);
+    setRawValue(nextValue);
+    onValueChange?.(Number(nextValue) || 0);
+  }, [defaultValue, disabled, onValueChange]);
 
   return (
     <>
@@ -126,7 +147,11 @@ function MoneyInput({ defaultValue, disabled }: { defaultValue?: number; disable
         value={formatMoneyInput(rawValue)}
         disabled={disabled}
         placeholder="0"
-        onChange={(event) => setRawValue(event.target.value.replace(/[^\d]/g, ""))}
+        onChange={(event) => {
+          const nextValue = event.target.value.replace(/[^\d]/g, "");
+          setRawValue(nextValue);
+          onValueChange?.(Number(nextValue) || 0);
+        }}
       />
       <input type="hidden" name="money" value={disabled ? "0" : rawValue || "0"} />
     </>
@@ -136,7 +161,7 @@ function ReadOnlyItem({ label, value }: { label: string; value: React.ReactNode 
   return (
     <div className="rounded-lg border bg-muted/30 p-3">
       <div className="text-muted-foreground text-xs">{label}</div>
-      <div className="mt-1 min-h-5 break-words text-sm">{value || "-"}</div>
+      <div className="mt-1 min-h-5 break-words text-sm">{value}</div>
     </div>
   );
 }
@@ -145,8 +170,11 @@ function ReadOnlyDetails({ order }: { order: OrderRow }) {
   return (
     <Section title="Dữ liệu khác">
       <div className="grid gap-3 md:grid-cols-2">
+        <ReadOnlyItem
+          label={"M\u00e3 \u0111\u01a1n h\u00e0ng"}
+          value={<span className="font-medium">{order.order_id}</span>}
+        />
         <ReadOnlyItem label="Mã vé" value={<span className="font-medium">{order.ordercode}</span>} />
-        <ReadOnlyItem label="Trạng thái thanh toán" value={<Badge variant="outline">{order.status || "-"}</Badge>} />
         <ReadOnlyItem label="Thời gian tạo" value={order.create_time} />
         <ReadOnlyItem label="Thời gian thanh toán" value={order.payment_time} />
         <ReadOnlyItem label="Thời gian check-in" value={order.checkin_time} />
@@ -175,7 +203,10 @@ function TicketFields({
   defaultName,
   defaultPhone,
   defaultTicketType,
+  defaultStatus,
   includeCheckin = false,
+  includeQuantity = false,
+  includeStatus = false,
 }: {
   defaultClass?: string;
   defaultEmail?: string;
@@ -185,24 +216,30 @@ function TicketFields({
   defaultName?: string;
   defaultPhone?: string;
   defaultTicketType?: string;
+  defaultStatus?: string;
   includeCheckin?: boolean;
+  includeQuantity?: boolean;
+  includeStatus?: boolean;
 }) {
-  const [ticketType, setTicketType] = React.useState(defaultTicketType || "paid");
+  const [ticketType, setTicketType] = React.useState(defaultTicketType ?? "paid");
+  const [quantity, setQuantity] = React.useState(1);
+  const [money, setMoney] = React.useState(defaultMoney ?? 0);
   const isGift = ticketType === "gift";
+  const totalMoney = isGift ? 0 : quantity * money;
 
   return (
     <>
-      <Section title="Thông tin khách hàng">
+      <Section title={"Th\u00f4ng tin kh\u00e1ch h\u00e0ng"}>
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Tên khách hàng" name="name">
+          <Field label={"T\u00ean kh\u00e1ch h\u00e0ng"} name="name">
             <Input id="name" name="name" defaultValue={defaultName} required />
           </Field>
-          <Field label="Giới tính" name="gender">
-            <SelectField name="gender" defaultValue={defaultGender || "none"} items={genderItems} />
+          <Field label={"Gi\u1edbi t\u00ednh"} name="gender">
+            <SelectField name="gender" defaultValue={defaultGender ?? "none"} items={genderItems} />
           </Field>
         </div>
         <div className="grid gap-3 md:grid-cols-1">
-          <Field label="Số điện thoại" name="phone">
+          <Field label={"S\u1ed1 \u0111i\u1ec7n tho\u1ea1i"} name="phone">
             <Input id="phone" name="phone" defaultValue={defaultPhone} required />
           </Field>
           <Field label="Email" name="email">
@@ -210,20 +247,19 @@ function TicketFields({
           </Field>
         </div>
       </Section>
-      <Section title="Thông tin vé">
+      <Section title={"Th\u00f4ng tin v\u00e9"}>
         <div className="grid gap-3 md:grid-cols-2">
-          <Field label="Loại vé" name="ticket_type">
-            <SelectField
-              name="ticket_type"
-              value={ticketType}
-              onValueChange={setTicketType}
-              items={ticketTypeItems}
-            />
+          <Field label={"Lo\u1ea1i v\u00e9"} name="ticket_type">
+            <SelectField name="ticket_type" value={ticketType} onValueChange={setTicketType} items={ticketTypeItems} />
           </Field>
-          <Field label="Hạng vé" name="class">
-            <Select name="class" defaultValue={defaultClass || "GOLD"} items={ticketClassItems.map((item) => ({ value: item, label: item }))}>
+          <Field label={"H\u1ea1ng v\u00e9"} name="class">
+            <Select
+              name="class"
+              defaultValue={defaultClass ?? "GOLD"}
+              items={ticketClassItems.map((item) => ({ value: item, label: item }))}
+            >
               <SelectTrigger id="class" className="w-full">
-                <SelectValue placeholder="Chọn hạng vé" />
+                <SelectValue placeholder={"Ch\u1ecdn h\u1ea1ng v\u00e9"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -236,11 +272,37 @@ function TicketFields({
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Giá vé" name="money">
-            <MoneyInput defaultValue={defaultMoney ?? 0} disabled={isGift} />
+          {includeQuantity ? (
+            <Field label={"S\u1ed1 l\u01b0\u1ee3ng v\u00e9"} name="quantity">
+              <Input
+                id="quantity"
+                name="quantity"
+                type="number"
+                min={1}
+                max={500}
+                step={1}
+                value={quantity}
+                onChange={(event) => setQuantity(Math.min(Math.max(Number(event.target.value) || 1, 1), 500))}
+                required
+              />
+            </Field>
+          ) : null}
+          <Field label={includeQuantity ? "Gi\u00e1 t\u1eebng v\u00e9" : "Gi\u00e1 v\u00e9"} name="money">
+            <MoneyInput defaultValue={defaultMoney ?? 0} disabled={isGift} onValueChange={setMoney} />
           </Field>
+          {includeQuantity ? (
+            <div className="rounded-lg border bg-muted/30 p-3 md:col-span-2">
+              <div className="text-muted-foreground text-xs">{"Th\u00e0nh ti\u1ec1n"}</div>
+              <div className="mt-1 font-medium text-base">{formatMoneyInput(totalMoney)} VND</div>
+            </div>
+          ) : null}
+          {includeStatus ? (
+            <Field label={"Tr\u1ea1ng th\u00e1i thanh to\u00e1n"} name="status">
+              <SelectField name="status" defaultValue={defaultStatus ?? "new"} items={paymentStatusItems} />
+            </Field>
+          ) : null}
           {includeCheckin ? (
-            <Field label="Trạng thái check-in" name="is_checkin">
+            <Field label={"Tr\u1ea1ng th\u00e1i check-in"} name="is_checkin">
               <SelectField name="is_checkin" defaultValue={String(defaultIsCheckin ?? 0)} items={checkinItems} />
             </Field>
           ) : null}
@@ -251,13 +313,19 @@ function TicketFields({
 }
 
 function CreateOrderForm() {
+  const formAction = React.useCallback(async (formData: FormData) => {
+    try {
+      await createOrderAction(formData);
+      toast.success("Th\u00eam v\u00e9 th\u00e0nh c\u00f4ng");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kh\u00f4ng th\u1ec3 th\u00eam v\u00e9");
+    }
+  }, []);
+
   return (
-    <form action={createOrderAction} className="grid gap-5">
-      <TicketFields />
-      <Button type="submit" className="w-fit">
-        <SaveIcon data-icon="inline-start" />
-        Thêm vé
-      </Button>
+    <form action={formAction} className="grid gap-5">
+      <TicketFields includeQuantity />
+      <SubmitButton pendingLabel={"\u0110ang th\u00eam v\u00e9..."}>{"Th\u00eam v\u00e9"}</SubmitButton>
     </form>
   );
 }
@@ -275,7 +343,9 @@ function EditOrderForm({ order }: { order: OrderRow }) {
         defaultName={order.name}
         defaultPhone={order.phone}
         defaultTicketType={order.is_gift ? "gift" : "paid"}
+        defaultStatus={order.status || "new"}
         includeCheckin
+        includeStatus
       />
       <Button type="submit" className="w-fit">
         <SaveIcon data-icon="inline-start" />

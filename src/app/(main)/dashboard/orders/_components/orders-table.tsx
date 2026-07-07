@@ -33,19 +33,9 @@ import {
   Trash2Icon,
 } from "lucide-react";
 
-import { deleteOrderAction } from "../actions";
-import { OrderForm } from "./order-form";
-import type { OrderFormMode, OrderRow } from "./schema";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -60,6 +50,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import { deleteOrderAction } from "../actions";
+import { OrderForm } from "./order-form";
+import type { OrderFormMode, OrderRow } from "./schema";
 
 const pageSizeItems = [10, 20, 30, 50, 100].map((pageSize) => ({
   value: `${pageSize}`,
@@ -213,7 +207,9 @@ function columns({ onEdit }: { onEdit: (order: OrderRow) => void }): ColumnDef<O
     {
       accessorKey: "payment_time",
       header: "Ngày thanh toán",
-      cell: ({ row }) => <div className="min-w-36 text-muted-foreground text-xs">{formatValue(row.original.payment_time)}</div>,
+      cell: ({ row }) => (
+        <div className="min-w-36 text-muted-foreground text-xs">{formatValue(row.original.payment_time)}</div>
+      ),
     },
     {
       accessorKey: "is_checkin",
@@ -227,7 +223,9 @@ function columns({ onEdit }: { onEdit: (order: OrderRow) => void }): ColumnDef<O
     {
       accessorKey: "checkin_time",
       header: "Ngày check-in",
-      cell: ({ row }) => <div className="min-w-36 text-muted-foreground text-xs">{formatValue(row.original.checkin_time)}</div>,
+      cell: ({ row }) => (
+        <div className="min-w-36 text-muted-foreground text-xs">{formatValue(row.original.checkin_time)}</div>
+      ),
     },
     {
       accessorKey: "career",
@@ -242,7 +240,9 @@ function columns({ onEdit }: { onEdit: (order: OrderRow) => void }): ColumnDef<O
     {
       accessorKey: "voucher",
       header: "Voucher",
-      cell: ({ row }) => <div className="max-w-64 truncate text-muted-foreground text-xs">{formatValue(row.original.voucher)}</div>,
+      cell: ({ row }) => (
+        <div className="max-w-64 truncate text-muted-foreground text-xs">{formatValue(row.original.voucher)}</div>
+      ),
     },
     {
       accessorKey: "ref",
@@ -257,17 +257,23 @@ function columns({ onEdit }: { onEdit: (order: OrderRow) => void }): ColumnDef<O
     {
       accessorKey: "utm_source",
       header: "UTM Source",
-      cell: ({ row }) => <div className="max-w-44 truncate text-muted-foreground text-xs">{formatValue(row.original.utm_source)}</div>,
+      cell: ({ row }) => (
+        <div className="max-w-44 truncate text-muted-foreground text-xs">{formatValue(row.original.utm_source)}</div>
+      ),
     },
     {
       accessorKey: "utm_medium",
       header: "UTM Medium",
-      cell: ({ row }) => <div className="max-w-44 truncate text-muted-foreground text-xs">{formatValue(row.original.utm_medium)}</div>,
+      cell: ({ row }) => (
+        <div className="max-w-44 truncate text-muted-foreground text-xs">{formatValue(row.original.utm_medium)}</div>
+      ),
     },
     {
       accessorKey: "utm_campaign",
       header: "UTM Campaign",
-      cell: ({ row }) => <div className="max-w-44 truncate text-muted-foreground text-xs">{formatValue(row.original.utm_campaign)}</div>,
+      cell: ({ row }) => (
+        <div className="max-w-44 truncate text-muted-foreground text-xs">{formatValue(row.original.utm_campaign)}</div>
+      ),
     },
     {
       accessorKey: "step_mail",
@@ -278,6 +284,17 @@ function columns({ onEdit }: { onEdit: (order: OrderRow) => void }): ColumnDef<O
       accessorKey: "step_zbs",
       header: "Step ZBS",
       cell: ({ row }) => <StepBadge value={row.original.step_zbs} />,
+    },
+    {
+      accessorKey: "order_id",
+      header: "M\u00e3 \u0111\u01a1n h\u00e0ng",
+      cell: ({ row }) => (
+        <div className="min-w-32">
+          <div className="font-medium">{formatValue(row.original.order_id)}</div>
+          <div className="text-muted-foreground text-xs">{formatValue(row.original.create_time)}</div>
+        </div>
+      ),
+      enableHiding: false,
     },
     {
       id: "actions",
@@ -313,7 +330,7 @@ export function OrdersTable({ data }: { data: OrderRow[] }) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: "ordercode", desc: true }]);
+  const [sorting, setSorting] = React.useState<SortingState>([{ id: "order_id", desc: true }]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -375,7 +392,7 @@ export function OrdersTable({ data }: { data: OrderRow[] }) {
 
   return (
     <div className="w-full flex-col justify-start gap-6">
-      <div className="flex flex-col gap-3 @4xl/main:flex-row @4xl/main:items-center @4xl/main:justify-between">
+      <div className="flex @4xl/main:flex-row flex-col @4xl/main:items-center @4xl/main:justify-between gap-3">
         <div className="flex items-center gap-2">
           <Label htmlFor="orders-search" className="sr-only">
             Tìm đơn hàng
@@ -385,7 +402,7 @@ export function OrdersTable({ data }: { data: OrderRow[] }) {
             value={globalFilter}
             onChange={(event) => setGlobalFilter(event.target.value)}
             placeholder="Tìm mã vé, tên, SĐT, email..."
-            className="h-8 w-full @4xl/main:w-96"
+            className="h-8 @4xl/main:w-96 w-full"
           />
         </div>
         <div className="flex items-center gap-2">

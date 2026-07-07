@@ -1,5 +1,6 @@
 ﻿export type OrderRow = {
   id: number;
+  order_id: string;
   ordercode: string;
   create_time: string;
   payment_time: string;
