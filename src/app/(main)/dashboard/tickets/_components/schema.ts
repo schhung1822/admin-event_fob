@@ -1,4 +1,4 @@
-﻿export type TicketRow = {
+export type TicketRow = {
   id: number;
   ticket_id: string;
   name: string;
@@ -7,7 +7,7 @@
   nc_order: number | null;
   time_start: string;
   time_end: string;
-  img: string;
+  status: "active" | "sold_out" | string;
   created_at: string;
   updated_at: string;
 };

@@ -8,6 +8,7 @@ import { getDatabasePool } from "@/lib/db";
 
 const ORDERS_PATH = "/dashboard/orders";
 const PAYMENT_WEBHOOK_URL = "https://nextg.nextgency.vn/webhook/fob/update-payment";
+const paymentStatuses = new Set(["new", "paydone", "expired", "cancel", "refund"]);
 
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -16,6 +17,10 @@ function getString(formData: FormData, key: string) {
 function getInteger(formData: FormData, key: string) {
   const value = Number(getString(formData, key));
   return Number.isFinite(value) ? Math.trunc(value) : 0;
+}
+
+function normalizePhone(value: string) {
+  return value.startsWith("0") ? `84${value.slice(1)}` : value;
 }
 
 function getMoney(formData: FormData) {
@@ -115,12 +120,7 @@ function normalizeStatus(value: string | null | undefined) {
 
 function getPaymentStatus(formData: FormData) {
   const status = normalizeStatus(getString(formData, "status"));
-
-  if (status === "paydone" || status === "paid") {
-    return status;
-  }
-
-  return "new";
+  return paymentStatuses.has(status) ? status : "new";
 }
 
 export async function createOrderAction(formData: FormData) {
@@ -130,6 +130,7 @@ export async function createOrderAction(formData: FormData) {
   const money = isGift ? 0 : getMoney(formData);
   const quantity = getQuantity(formData);
   const totalMoney = money * quantity;
+  const phone = normalizePhone(getString(formData, "phone"));
   const orderId = await generateUniqueCode("order_id", "DH");
   const usedOrderCodes = new Set<string>();
   const orderCodes: string[] = [];
@@ -154,7 +155,7 @@ export async function createOrderAction(formData: FormData) {
         now,
         now,
         getString(formData, "name"),
-        getString(formData, "phone"),
+        phone,
         getString(formData, "email"),
         getGender(formData),
         getString(formData, "class"),
@@ -189,6 +190,7 @@ export async function updateOrderAction(formData: FormData) {
   const isCheckin = getInteger(formData, "is_checkin") === 1;
   const nextStatus = getPaymentStatus(formData);
   const nextMoney = isGift ? 0 : getMoney(formData);
+  const nextPhone = normalizePhone(getString(formData, "phone"));
   const [existingRows] = await pool.query<
     Array<
       RowDataPacket & {
@@ -241,7 +243,7 @@ export async function updateOrderAction(formData: FormData) {
     [
       orderId,
       getString(formData, "name"),
-      getString(formData, "phone"),
+      nextPhone,
       getString(formData, "email"),
       getGender(formData),
       getString(formData, "class"),

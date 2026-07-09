@@ -41,7 +41,7 @@ async function getOrders() {
       step_mail,
       step_zbs
     FROM orders
-    ORDER BY id DESC
+    ORDER BY create_time DESC, id DESC
     LIMIT 500
   `);
 
@@ -59,14 +59,15 @@ async function getOrders() {
 
 export default async function Page() {
   const orders = await getOrders();
-  const paidOrders = orders.filter((order) => order.status === "paydone" || order.status === "paid");
+  const paidOrders = orders.filter((order) => order.status === "paydone");
   const paidCount = paidOrders.length;
   const checkedInCount = orders.filter((order) => order.is_checkin).length;
+  const totalCheckins = orders.reduce((sum, order) => sum + order.number_checkin, 0);
   const revenue = paidOrders.reduce((sum, order) => sum + order.money, 0);
 
   return (
-    <div className="@container/main flex flex-col gap-4 md:gap-6">
-      <div className="grid gap-4 px-4 lg:grid-cols-3 lg:px-6">
+    <div className="@container/main flex h-[calc(100dvh-6rem)] min-h-0 flex-col gap-4 overflow-hidden md:gap-6">
+      <div className="grid shrink-0 gap-4 px-4 md:grid-cols-2 lg:px-6 xl:grid-cols-4">
         <div className="rounded-lg border p-4">
           <div className="text-muted-foreground text-sm">Vé đăng ký</div>
           <div className="mt-2 font-heading font-semibold text-2xl">{orders.length}</div>
@@ -78,7 +79,7 @@ export default async function Page() {
           <div className="text-muted-foreground text-sm">Đã thanh toán</div>
           <div className="mt-2 font-heading font-semibold text-2xl">{paidCount}</div>
           <Badge variant="outline" className="mt-3">
-            Theo trạng thái paydone
+            Theo trạng thái đã thanh toán
           </Badge>
         </div>
         <div className="rounded-lg border p-4">
@@ -91,11 +92,18 @@ export default async function Page() {
             }).format(revenue)}
           </div>
           <Badge variant="outline" className="mt-3">
-            {checkedInCount} vé đã check-in
+            Theo trạng thái đã thanh toán
+          </Badge>
+        </div>
+        <div className="rounded-lg border p-4">
+          <div className="text-muted-foreground text-sm">Đã check-in</div>
+          <div className="mt-2 font-heading font-semibold text-2xl">{checkedInCount}</div>
+          <Badge variant="outline" className="mt-3">
+            {totalCheckins} lượt check-in
           </Badge>
         </div>
       </div>
-      <div className="px-4 lg:px-6">
+      <div className="min-h-0 flex-1 px-4 lg:px-6">
         <OrdersTable data={orders} />
       </div>
     </div>

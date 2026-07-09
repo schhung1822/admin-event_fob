@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parseISO } from "date-fns";
-import { Area, CartesianGrid, ComposedChart, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,15 +23,15 @@ export type DailyDashboardPoint = {
 const chartConfig = {
   registeredTickets: {
     label: "Vé đăng ký",
-    color: "var(--chart-1)",
+    color: "#facc15",
   },
   paidTickets: {
     label: "Vé thanh toán",
-    color: "var(--chart-2)",
+    color: "#2563eb",
   },
   revenue: {
     label: "Doanh thu",
-    color: "var(--chart-3)",
+    color: "#22c55e",
   },
 } satisfies ChartConfig;
 
@@ -48,27 +48,13 @@ export function PerformanceOverview({ data }: { data: DailyDashboardPoint[] }) {
       <CardHeader>
         <CardTitle className="leading-none">Thống kê vé theo ngày</CardTitle>
         <CardDescription>
-          Vé đăng ký tính theo ngày tạo. Vé thanh toán và doanh thu tính theo ngày thanh toán.
+          Đường xanh: vé thanh toán. Đường vàng: vé đăng ký. Cột thể hiện doanh thu theo ngày thanh toán.
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <ChartContainer config={chartConfig} className="aspect-auto h-96 w-full">
           <ComposedChart data={data} margin={{ left: 0, right: 10, top: 10 }}>
-            <defs>
-              <linearGradient id="fillRegisteredTickets" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-registeredTickets)" stopOpacity={0.36} />
-                <stop offset="95%" stopColor="var(--color-registeredTickets)" stopOpacity={0.04} />
-              </linearGradient>
-              <linearGradient id="fillPaidTickets" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-paidTickets)" stopOpacity={0.28} />
-                <stop offset="95%" stopColor="var(--color-paidTickets)" stopOpacity={0.04} />
-              </linearGradient>
-              <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.24} />
-                <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.03} />
-              </linearGradient>
-            </defs>
             <CartesianGrid vertical={false} strokeOpacity={0.5} />
             <XAxis
               dataKey="date"
@@ -121,7 +107,7 @@ export function PerformanceOverview({ data }: { data: DailyDashboardPoint[] }) {
                     return (
                       <div className="flex w-full items-center justify-between gap-4">
                         <span className="text-muted-foreground">{label}</span>
-                        <span className="font-mono font-medium text-foreground tabular-nums">{formattedValue}</span>
+                        <span className="font-medium font-mono text-foreground tabular-nums">{formattedValue}</span>
                       </div>
                     );
                   }}
@@ -129,35 +115,31 @@ export function PerformanceOverview({ data }: { data: DailyDashboardPoint[] }) {
               }
             />
             <ChartLegend verticalAlign="top" content={<ChartLegendContent className="mb-5 justify-end" />} />
-            <Area
-              yAxisId="tickets"
-              dataKey="registeredTickets"
-              type="natural"
-              fill="url(#fillRegisteredTickets)"
-              stroke="var(--color-registeredTickets)"
-              strokeWidth={1.5}
-              dot={false}
-              fillOpacity={1}
-            />
-            <Area
-              yAxisId="tickets"
-              dataKey="paidTickets"
-              type="natural"
-              fill="url(#fillPaidTickets)"
-              stroke="var(--color-paidTickets)"
-              strokeWidth={1.5}
-              dot={false}
-              fillOpacity={1}
-            />
-            <Area
+            <Bar
               yAxisId="revenue"
               dataKey="revenue"
-              type="natural"
-              fill="url(#fillRevenue)"
-              stroke="var(--color-revenue)"
-              strokeWidth={1.5}
-              dot={false}
-              fillOpacity={1}
+              fill="var(--color-revenue)"
+              fillOpacity={0.72}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={42}
+            />
+            <Line
+              yAxisId="tickets"
+              dataKey="paidTickets"
+              type="monotone"
+              stroke="var(--color-paidTickets)"
+              strokeWidth={2.5}
+              dot={{ r: 3, strokeWidth: 1.5 }}
+              activeDot={{ r: 5 }}
+            />
+            <Line
+              yAxisId="tickets"
+              dataKey="registeredTickets"
+              type="monotone"
+              stroke="var(--color-registeredTickets)"
+              strokeWidth={2.5}
+              dot={{ r: 3, strokeWidth: 1.5 }}
+              activeDot={{ r: 5 }}
             />
           </ComposedChart>
         </ChartContainer>

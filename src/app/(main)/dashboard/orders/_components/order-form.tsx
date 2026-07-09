@@ -34,9 +34,11 @@ const checkinItems = [
   { value: "1", label: "Đã check-in" },
 ] as const;
 const paymentStatusItems = [
-  { value: "new", label: "new" },
-  { value: "paydone", label: "paydone" },
-  { value: "paid", label: "paid" },
+  { value: "new", label: "Mới" },
+  { value: "paydone", label: "Đã thanh toán" },
+  { value: "expired", label: "Hết hạn" },
+  { value: "cancel", label: "Hủy" },
+  { value: "refund", label: "Hoàn tiền" },
 ] as const;
 
 function Field({ children, label, name }: { children: React.ReactNode; label: string; name: string }) {
@@ -343,7 +345,7 @@ function EditOrderForm({ order }: { order: OrderRow }) {
         defaultName={order.name}
         defaultPhone={order.phone}
         defaultTicketType={order.is_gift ? "gift" : "paid"}
-        defaultStatus={order.status || "new"}
+        defaultStatus={paymentStatusItems.some((item) => item.value === order.status) ? order.status : "new"}
         includeCheckin
         includeStatus
       />

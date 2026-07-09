@@ -1,8 +1,8 @@
 "use client";
 "use no memo";
 
-import * as React from "react";
 import type { MouseEvent } from "react";
+import * as React from "react";
 
 import {
   type ColumnDef,
@@ -17,21 +17,12 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { Download, ImageIcon, MoreHorizontal, Plus, Search, SlidersHorizontal, TicketIcon } from "lucide-react";
-
-import { createTicketAction, deleteTicketAction, updateTicketAction } from "../actions";
-import type { TicketFormMode, TicketRow } from "./schema";
+import { MoreHorizontal, Plus, Search, TicketIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,18 +43,25 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+import { createTicketAction, deleteTicketAction, updateTicketAction } from "../actions";
+import type { TicketFormMode, TicketRow } from "./schema";
+
 const pageSizeItems = [10, 20, 30, 40, 50];
+const ticketStatusItems = [
+  { label: "Kích hoạt", value: "active" },
+  { label: "Hết vé", value: "sold_out" },
+];
 
 function formatMoney(value: number | null | undefined) {
   return new Intl.NumberFormat("vi-VN", {
     currency: "VND",
     maximumFractionDigits: 0,
     style: "currency",
-  }).format(Number(value || 0));
+  }).format(Number(value ?? 0));
 }
 
 function formatMoneyInput(value: string | number | null | undefined) {
@@ -77,7 +75,15 @@ function toDatetimeLocal(value: string) {
   return value.replace(" ", "T").slice(0, 16);
 }
 
-function MoneyInput({ defaultValue, name, required }: { defaultValue?: number | null; name: string; required?: boolean }) {
+function MoneyInput({
+  defaultValue,
+  name,
+  required,
+}: {
+  defaultValue?: number | null;
+  name: string;
+  required?: boolean;
+}) {
   const [rawValue, setRawValue] = React.useState(() => String(defaultValue ?? ""));
 
   React.useEffect(() => {
@@ -89,9 +95,9 @@ function MoneyInput({ defaultValue, name, required }: { defaultValue?: number | 
       <Input
         id={`${name}_display`}
         inputMode="numeric"
-        value={formatMoneyInput(rawValue)}
         placeholder="0"
         required={required}
+        value={formatMoneyInput(rawValue)}
         onChange={(event) => setRawValue(event.target.value.replace(/[^\d]/g, ""))}
       />
       <input type="hidden" name={name} value={rawValue || ""} />
@@ -101,35 +107,19 @@ function MoneyInput({ defaultValue, name, required }: { defaultValue?: number | 
 
 function Field({ children, label, name }: { children: React.ReactNode; label: string; name: string }) {
   return (
-    <div className="min-w-0 flex flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       <Label htmlFor={name}>{label}</Label>
       {children}
     </div>
   );
 }
 
-function TicketImage({ ticket, variant = "thumb" }: { ticket: TicketRow; variant?: "thumb" | "preview" }) {
-  if (!ticket.img) {
-    return (
-      <div className="flex size-14 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
-        <ImageIcon className="size-5" />
-      </div>
-    );
-  }
+function TicketStatusBadge({ status }: { status: string }) {
+  const isSoldOut = status === "sold_out";
 
-  return (
-    <img
-      src={ticket.img}
-      alt={ticket.name}
-      className={
-        variant === "preview"
-          ? "h-auto w-full max-w-full rounded-lg object-contain"
-          : "h-auto max-h-16 w-24 max-w-24 rounded-md object-contain"
-      }
-      loading="lazy"
-    />
-  );
+  return <Badge variant={isSoldOut ? "secondary" : "outline"}>{isSoldOut ? "Hết vé" : "Kích hoạt"}</Badge>;
 }
+
 function TicketForm({ mode, ticket }: { mode: TicketFormMode; ticket?: TicketRow | null }) {
   const action = mode === "create" ? createTicketAction : updateTicketAction;
 
@@ -157,44 +147,47 @@ function TicketForm({ mode, ticket }: { mode: TicketFormMode; ticket?: TicketRow
           <Field label="Thứ tự" name="nc_order">
             <Input id="nc_order" name="nc_order" type="number" step="0.01" defaultValue={ticket?.nc_order ?? ""} />
           </Field>
-          <Field label="Ảnh hiện tại / URL ảnh" name="img">
-                        <Input
-              id="img"
-              name="img"
-              className="min-w-0"
-              defaultValue={ticket?.img}
-              placeholder="https://... hoặc /uploads/tickets/..."
-            />
+          <Field label="Trạng thái vé" name="status">
+            <Select name="status" defaultValue={ticket?.status || "active"}>
+              <SelectTrigger id="status" className="w-full">
+                <SelectValue placeholder="Chọn trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {ticketStatusItems.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </Field>
         </div>
       </section>
       <section className="grid gap-3">
         <div className="flex items-center gap-3">
-          <h3 className="font-medium text-sm">Thời gian khuyến mãi & ảnh vé</h3>
+          <h3 className="font-medium text-sm">Thời gian khuyến mãi</h3>
           <Separator className="flex-1" />
         </div>
         <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Field label="Bắt đầu bán" name="time_start">
-            <Input id="time_start" name="time_start" type="datetime-local" defaultValue={toDatetimeLocal(ticket?.time_start || "")} />
+            <Input
+              id="time_start"
+              name="time_start"
+              type="datetime-local"
+              defaultValue={toDatetimeLocal(ticket?.time_start || "")}
+            />
           </Field>
           <Field label="Kết thúc bán" name="time_end">
-            <Input id="time_end" name="time_end" type="datetime-local" defaultValue={toDatetimeLocal(ticket?.time_end || "")} />
+            <Input
+              id="time_end"
+              name="time_end"
+              type="datetime-local"
+              defaultValue={toDatetimeLocal(ticket?.time_end || "")}
+            />
           </Field>
-          <div className="md:col-span-2">
-            <Field label="Tải ảnh vé" name="image_file">
-              <Input id="image_file" name="image_file" type="file" accept="image/*" />
-            </Field>
-          </div>
         </div>
-        {ticket?.img ? (
-          <div className="grid min-w-0 gap-3 rounded-lg border bg-muted/30 p-3">
-            <TicketImage ticket={ticket} variant="preview" />
-            <div className="min-w-0 text-sm">
-              <div className="font-medium">Ảnh đang dùng</div>
-              <div className="break-all text-muted-foreground text-xs leading-relaxed">{ticket.img}</div>
-            </div>
-          </div>
-        ) : null}
       </section>
       <Button type="submit" className="w-fit">
         {mode === "create" ? "Thêm hạng vé" : "Lưu thay đổi"}
@@ -221,7 +214,7 @@ function TicketPanel({
       <DrawerContent className="sm:[--drawer-content-width:34rem]">
         <DrawerHeader className="gap-1 border-b pb-4">
           <DrawerTitle>{isEdit && ticket ? `Sửa ${ticket.name}` : "Thêm hạng vé"}</DrawerTitle>
-          <DrawerDescription>Quản lý thông tin hạng vé và ảnh hiển thị.</DrawerDescription>
+          <DrawerDescription>Quản lý thông tin hạng vé, thời gian bán và trạng thái hiển thị.</DrawerDescription>
         </DrawerHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <TicketForm key={ticket ? `${mode}-${ticket.id}` : mode} mode={mode} ticket={ticket} />
@@ -253,7 +246,7 @@ function getColumns(onEdit: (ticket: TicketRow) => void): ColumnDef<TicketRow>[]
   return [
     {
       id: "search",
-      accessorFn: (row) => `${row.ticket_id} ${row.name} ${row.money} ${row.money_sale ?? ""}`,
+      accessorFn: (row) => `${row.ticket_id} ${row.name} ${row.money} ${row.money_sale ?? ""} ${row.status}`,
       filterFn: "includesString",
       enableHiding: true,
     },
@@ -261,8 +254,14 @@ function getColumns(onEdit: (ticket: TicketRow) => void): ColumnDef<TicketRow>[]
       accessorKey: "name",
       header: "Hạng vé",
       cell: ({ row }) => (
-        <button type="button" className="flex min-w-0 items-center gap-3 text-left" onClick={() => onEdit(row.original)}>
-          <TicketImage ticket={row.original} />
+        <button
+          type="button"
+          className="flex min-w-0 items-center gap-3 text-left"
+          onClick={() => onEdit(row.original)}
+        >
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-muted font-medium text-muted-foreground text-xs">
+            {row.original.ticket_id.slice(0, 2).toUpperCase()}
+          </div>
           <div className="min-w-0">
             <div className="truncate font-medium text-foreground text-sm">{row.original.name}</div>
             <div className="truncate text-muted-foreground text-sm">{row.original.ticket_id}</div>
@@ -286,6 +285,11 @@ function getColumns(onEdit: (ticket: TicketRow) => void): ColumnDef<TicketRow>[]
       accessorKey: "nc_order",
       header: "Thứ tự",
       cell: ({ row }) => <Badge variant="outline">{row.original.nc_order ?? "-"}</Badge>,
+    },
+    {
+      accessorKey: "status",
+      header: "Trạng thái",
+      cell: ({ row }) => <TicketStatusBadge status={row.original.status} />,
     },
     {
       accessorKey: "time_start",
@@ -391,7 +395,6 @@ export function Tickets({ tickets }: { tickets: TicketRow[] }) {
   const pageCount = Math.max(table.getPageCount(), 1);
   const currentPage = Math.min(table.getState().pagination.pageIndex + 1, pageCount);
   const pageNumbers = getPageNumbers(currentPage, pageCount);
-  const totalValue = tickets.reduce((sum, ticket) => sum + ticket.money, 0);
 
   return (
     <Card>

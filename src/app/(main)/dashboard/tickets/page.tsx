@@ -1,9 +1,9 @@
-﻿import type { RowDataPacket } from "mysql2";
-
-import { Tickets } from "./_components/tickets";
-import type { TicketRow } from "./_components/schema";
+import type { RowDataPacket } from "mysql2";
 
 import { getDatabasePool } from "@/lib/db";
+
+import type { TicketRow } from "./_components/schema";
+import { Tickets } from "./_components/tickets";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,7 +21,7 @@ async function getTickets() {
       nc_order,
       COALESCE(DATE_FORMAT(time_start, '%Y-%m-%d %H:%i:%s'), '') AS time_start,
       COALESCE(DATE_FORMAT(time_end, '%Y-%m-%d %H:%i:%s'), '') AS time_end,
-      COALESCE(img, '') AS img,
+      COALESCE(NULLIF(status, ''), 'active') AS status,
       COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), '') AS created_at,
       COALESCE(DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s'), '') AS updated_at
     FROM ticket
