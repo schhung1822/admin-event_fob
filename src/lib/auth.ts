@@ -3,6 +3,7 @@ export const AUTH_COOKIE_NAME = "crm_fob_session";
 type SessionPayload = {
   exp: number;
   id: number;
+  role?: string;
   username: string;
 };
 
@@ -22,7 +23,10 @@ function toBase64Url(input: string | Uint8Array) {
 }
 
 function fromBase64Url(input: string) {
-  const padded = input.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(input.length / 4) * 4, "=");
+  const padded = input
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(input.length / 4) * 4, "=");
   const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
 

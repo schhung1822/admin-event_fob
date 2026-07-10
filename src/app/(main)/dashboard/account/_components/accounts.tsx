@@ -3,7 +3,6 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 
 import {
   type ColumnDef,
@@ -19,8 +18,8 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { Edit, Eye, EyeOff, KeyRound, Plus, Search, Trash2 } from "lucide-react";
+import { useFormStatus } from "react-dom";
 
-import { changeCurrentPasswordAction, deleteAccountAction, saveAccountAction } from "../actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,9 +37,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+import { changeCurrentPasswordAction, deleteAccountAction, saveAccountAction } from "../actions";
 import type { AccountRow } from "./data";
 
 type AccountPanelMode = "create" | "edit";
@@ -134,7 +135,14 @@ function AccountForm({ account, mode }: { account: AccountRow | null; mode: Acco
         <div className="grid gap-4 sm:grid-cols-2">
           <Field className="gap-1.5">
             <FieldLabel htmlFor="email">Email</FieldLabel>
-            <Input id="email" name="email" type="email" defaultValue={account?.email ?? ""} placeholder="admin@example.com" required />
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              defaultValue={account?.email ?? ""}
+              placeholder="admin@example.com"
+              required
+            />
           </Field>
           <Field className="gap-1.5">
             <FieldLabel htmlFor="phone">Số điện thoại</FieldLabel>
@@ -142,6 +150,20 @@ function AccountForm({ account, mode }: { account: AccountRow | null; mode: Acco
           </Field>
         </div>
 
+        <Field className="gap-1.5">
+          <FieldLabel htmlFor="role">Vai trò</FieldLabel>
+          <Select name="role" defaultValue={account?.role || "admin"}>
+            <SelectTrigger id="role" className="w-full">
+              <SelectValue placeholder="Chọn vai trò" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="staff">Staff</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
         <Field className="gap-1.5">
           <FieldLabel htmlFor="password">{isEdit ? "Mật khẩu mới (bỏ trống nếu không đổi)" : "Mật khẩu"}</FieldLabel>
           <PasswordInput id="password" name="password" required={!isEdit} />
@@ -154,7 +176,17 @@ function AccountForm({ account, mode }: { account: AccountRow | null; mode: Acco
   );
 }
 
-function AccountPanel({ account, mode, onOpenChange, open }: { account: AccountRow | null; mode: AccountPanelMode; onOpenChange: (open: boolean) => void; open: boolean }) {
+function AccountPanel({
+  account,
+  mode,
+  onOpenChange,
+  open,
+}: {
+  account: AccountRow | null;
+  mode: AccountPanelMode;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
   const isEdit = mode === "edit";
 
   return (
@@ -162,7 +194,9 @@ function AccountPanel({ account, mode, onOpenChange, open }: { account: AccountR
       <DrawerContent className="sm:[--drawer-content-width:32rem]">
         <DrawerHeader className="gap-1 border-b pb-4">
           <DrawerTitle>{isEdit ? "Sửa tài khoản" : "Thêm tài khoản"}</DrawerTitle>
-          <DrawerDescription>{isEdit ? account?.username : "Tạo tài khoản đăng nhập mới cho website."}</DrawerDescription>
+          <DrawerDescription>
+            {isEdit ? account?.username : "Tạo tài khoản đăng nhập mới cho website."}
+          </DrawerDescription>
         </DrawerHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <AccountForm key={account ? `edit-${account.id}` : "create"} account={account} mode={mode} />
@@ -202,7 +236,11 @@ function AccountsTable({ table }: { table: ReturnType<typeof useReactTable<Accou
         <TableBody>
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} className="border-border/60 hover:bg-white/2.5" data-state={row.getIsSelected() && "selected"}>
+              <TableRow
+                key={row.id}
+                className="border-border/60 hover:bg-white/2.5"
+                data-state={row.getIsSelected() && "selected"}
+              >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="px-3 py-4 align-middle">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -224,7 +262,9 @@ function AccountsTable({ table }: { table: ReturnType<typeof useReactTable<Accou
 
       <div className="flex items-center justify-between px-4">
         <div className="flex items-center gap-4 text-muted-foreground text-sm">
-          <span>Trang {currentPage} của {pageCount}</span>
+          <span>
+            Trang {currentPage} của {pageCount}
+          </span>
           <span>Dòng mỗi trang: {rowsPerPage}</span>
         </div>
         <Pagination className="mx-0 w-auto justify-start md:justify-end">
@@ -330,19 +370,32 @@ export function Accounts({ accounts }: { accounts: AccountRow[] }) {
       {
         accessorKey: "isCurrent",
         header: "Trạng thái",
-        cell: ({ row }) => (row.original.isCurrent ? <Badge>Đang đăng nhập</Badge> : <span className="text-muted-foreground text-sm">-</span>),
+        cell: ({ row }) =>
+          row.original.isCurrent ? (
+            <Badge>Đang đăng nhập</Badge>
+          ) : (
+            <span className="text-muted-foreground text-sm">-</span>
+          ),
       },
       {
         accessorKey: "createdAt",
         header: "Thời gian tạo",
-        cell: ({ row }) => <div className="whitespace-nowrap text-muted-foreground text-sm">{row.original.createdAt || "-"}</div>,
+        cell: ({ row }) => (
+          <div className="whitespace-nowrap text-muted-foreground text-sm">{row.original.createdAt || "-"}</div>
+        ),
       },
       {
         id: "actions",
         header: () => <div className="text-right">Tác vụ</div>,
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            <Button type="button" size="icon-sm" variant="outline" onClick={() => openEdit(row.original)} aria-label="Sửa tài khoản">
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="outline"
+              onClick={() => openEdit(row.original)}
+              aria-label="Sửa tài khoản"
+            >
               <Edit className="size-4" />
             </Button>
             <form
@@ -352,7 +405,13 @@ export function Accounts({ accounts }: { accounts: AccountRow[] }) {
               }}
             >
               <input type="hidden" name="id" value={row.original.id} />
-              <Button type="submit" size="icon-sm" variant="outline" disabled={row.original.isCurrent} aria-label="Xóa tài khoản">
+              <Button
+                type="submit"
+                size="icon-sm"
+                variant="outline"
+                disabled={row.original.isCurrent}
+                aria-label="Xóa tài khoản"
+              >
                 <Trash2 className="size-4" />
               </Button>
             </form>
@@ -386,7 +445,9 @@ export function Accounts({ accounts }: { accounts: AccountRow[] }) {
       <Card>
         <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
           <CardTitle className="text-xl leading-none">Quản lý tài khoản</CardTitle>
-          <CardDescription className="max-w-sm leading-snug">Thêm, sửa, xóa tài khoản đăng nhập website.</CardDescription>
+          <CardDescription className="max-w-sm leading-snug">
+            Thêm, sửa, xóa tài khoản đăng nhập website.
+          </CardDescription>
           <CardAction className="col-start-1 row-start-auto flex w-full flex-wrap justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:flex-nowrap md:justify-end md:justify-self-end">
             <InputGroup className="h-7 w-full md:w-64">
               <InputGroupAddon align="inline-start">

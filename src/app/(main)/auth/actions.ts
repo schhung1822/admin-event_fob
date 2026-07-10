@@ -1,9 +1,8 @@
 "use server";
 
-import { pbkdf2Sync, timingSafeEqual } from "node:crypto";
-
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
 import type { RowDataPacket } from "mysql2";
 
 import { AUTH_COOKIE_NAME, createSessionToken } from "@/lib/auth";
@@ -16,11 +15,28 @@ type LoginState = {
   error?: string;
 };
 
+type ColumnRow = RowDataPacket & {
+  column_name: string;
+};
+
 type UserDbRow = RowDataPacket & {
   id: number;
   username: string;
   password_hash: string;
+  role: string | null;
 };
+
+async function ensureUsersRoleColumn() {
+  const [columns] = await getDatabasePool().query<ColumnRow[]>(
+    `SELECT LOWER(COLUMN_NAME) AS column_name
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'`,
+  );
+
+  if (!columns.some((column) => column.column_name === "role")) {
+    await getDatabasePool().query("ALTER TABLE users ADD COLUMN role VARCHAR(64) NOT NULL DEFAULT 'admin'");
+  }
+}
 
 export async function loginAction(_state: LoginState, formData: FormData): Promise<LoginState> {
   const username = String(formData.get("username") ?? "").trim();
@@ -31,8 +47,10 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
     return { error: "Vui lòng nhập tài khoản và mật khẩu." };
   }
 
+  await ensureUsersRoleColumn();
+
   const [users] = await getDatabasePool().query<UserDbRow[]>(
-    "SELECT id, username, password_hash FROM users WHERE username = ? LIMIT 1",
+    "SELECT id, username, password_hash, role FROM users WHERE username = ? LIMIT 1",
     [username],
   );
   const user = users[0];
@@ -42,7 +60,8 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
   }
 
   const maxAge = remember ? SESSION_MAX_AGE : 60 * 60 * 12;
-  const token = await createSessionToken({ id: Number(user.id), username: user.username }, maxAge);
+  const role = user.role || "admin";
+  const token = await createSessionToken({ id: Number(user.id), role, username: user.username }, maxAge);
   const cookieStore = await cookies();
 
   cookieStore.set(AUTH_COOKIE_NAME, token, {
@@ -53,7 +72,7 @@ export async function loginAction(_state: LoginState, formData: FormData): Promi
     secure: process.env.NODE_ENV === "production",
   });
 
-  redirect("/dashboard/default");
+  redirect(role === "staff" ? "/dashboard/checkin" : "/dashboard/default");
 }
 
 export async function logoutAction() {

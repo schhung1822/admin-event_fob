@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import type { RowDataPacket } from "mysql2";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
@@ -48,18 +50,24 @@ async function getCurrentUser(cookieStore: Awaited<ReturnType<typeof cookies>>):
     name: user?.name || user?.username || session.username || "Admin",
     username: user?.username || session.username || "admin",
     avatar: "",
-    role: user?.role || "admin",
+    role: user?.role || session.role || "admin",
   };
 }
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
+  const headerStore = await headers();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
   const [variant, collapsible, currentUser] = await Promise.all([
     getPreference("sidebar_variant"),
     getPreference("sidebar_collapsible"),
     getCurrentUser(cookieStore),
   ]);
+  const pathname = headerStore.get("x-pathname") || "";
+
+  if (currentUser.role === "staff" && pathname && pathname !== "/dashboard/checkin") {
+    redirect("/dashboard/checkin");
+  }
 
   return (
     <SidebarProvider
@@ -94,10 +102,10 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
                 orientation="vertical"
                 className="mx-2 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
               />
-              <SearchDialog />
+              {currentUser.role === "staff" ? null : <SearchDialog />}
             </div>
             <div className="flex items-center gap-2">
-              <LayoutControls />
+              {currentUser.role === "staff" ? null : <LayoutControls />}
               <ThemeSwitcher />
               <AccountSwitcher user={currentUser} />
             </div>

@@ -15,14 +15,26 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { APP_CONFIG } from "@/config/app-config";
-import { rootUser } from "@/data/users";
-import { sidebarItems } from "@/navigation/sidebar/sidebar-items";
+import { type NavGroup, sidebarItems } from "@/navigation/sidebar/sidebar-items";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 
+import type { CurrentUser } from "./account-switcher";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-import type { CurrentUser } from "./account-switcher";
 import { SidebarSupportCard } from "./sidebar-support-card";
+
+function getSidebarItemsForRole(role: string): NavGroup[] {
+  if (role !== "staff") {
+    return sidebarItems;
+  }
+
+  return sidebarItems
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.id === "checkin"),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 const _data = {
   navSecondary: [
@@ -61,7 +73,10 @@ const _data = {
   ],
 };
 
-export function AppSidebar({ currentUser, ...props }: React.ComponentProps<typeof Sidebar> & { currentUser: CurrentUser }) {
+export function AppSidebar({
+  currentUser,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { currentUser: CurrentUser }) {
   const { sidebarVariant, sidebarCollapsible, isSynced } = usePreferencesStore(
     useShallow((s) => ({
       sidebarVariant: s.values.sidebar_variant,
@@ -72,13 +87,15 @@ export function AppSidebar({ currentUser, ...props }: React.ComponentProps<typeo
 
   const variant = isSynced ? sidebarVariant : props.variant;
   const collapsible = isSynced ? sidebarCollapsible : props.collapsible;
+  const roleSidebarItems = getSidebarItemsForRole(currentUser.role);
+  const homeHref = currentUser.role === "staff" ? "/dashboard/checkin" : "/dashboard/default";
 
   return (
     <Sidebar {...props} variant={variant} collapsible={collapsible}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton render={<Link prefetch={false} href="/dashboard/default" />}>
+            <SidebarMenuButton render={<Link prefetch={false} href={homeHref} />}>
               <Command />
               <span className="font-semibold text-base">{APP_CONFIG.name}</span>
             </SidebarMenuButton>
@@ -86,12 +103,12 @@ export function AppSidebar({ currentUser, ...props }: React.ComponentProps<typeo
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarItems} />
+        <NavMain items={roleSidebarItems} showCreateOrder={currentUser.role !== "staff"} />
         {/* <NavDocuments items={data.documents} /> */}
         {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarSupportCard />
+        {currentUser.role === "staff" ? null : <SidebarSupportCard />}
         <NavUser user={currentUser} />
       </SidebarFooter>
     </Sidebar>

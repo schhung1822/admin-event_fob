@@ -1,7 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+
 import type { RowDataPacket } from "mysql2";
 
 import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
@@ -28,6 +29,10 @@ function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
+function getAccountRole(formData: FormData) {
+  return getString(formData, "role") === "staff" ? "staff" : "admin";
+}
+
 async function addMissingUsersColumns() {
   const [columns] = await getDatabasePool().query<ColumnRow[]>(
     `SELECT LOWER(COLUMN_NAME) AS column_name
@@ -42,6 +47,10 @@ async function addMissingUsersColumns() {
 
   if (!existingColumns.has("phone")) {
     await getDatabasePool().query("ALTER TABLE users ADD COLUMN phone VARCHAR(64) NULL AFTER email");
+  }
+
+  if (!existingColumns.has("role")) {
+    await getDatabasePool().query("ALTER TABLE users ADD COLUMN role VARCHAR(64) NOT NULL DEFAULT 'admin' AFTER phone");
   }
 }
 
@@ -68,6 +77,18 @@ export async function ensureUsersTable() {
 async function getCurrentSession() {
   const cookieStore = await cookies();
   return verifySessionToken(cookieStore.get(AUTH_COOKIE_NAME)?.value);
+}
+
+async function getCurrentUserRole() {
+  const session = await getCurrentSession();
+  if (!session) return null;
+
+  const [rows] = await getDatabasePool().query<Array<RowDataPacket & { role: string | null }>>(
+    "SELECT role FROM users WHERE id = ? LIMIT 1",
+    [session.id],
+  );
+
+  return rows[0]?.role || session.role || "admin";
 }
 
 export async function changeCurrentPasswordAction(_state: PasswordState, formData: FormData): Promise<PasswordState> {
@@ -112,13 +133,14 @@ export async function changeCurrentPasswordAction(_state: PasswordState, formDat
 
 export async function saveAccountAction(formData: FormData) {
   await ensureUsersTable();
+  if ((await getCurrentUserRole()) !== "admin") return;
 
   const id = Number(formData.get("id") ?? 0);
   const username = getString(formData, "username");
   const name = getString(formData, "name");
   const email = getString(formData, "email");
   const phone = getString(formData, "phone");
-  const role = "admin";
+  const role = getAccountRole(formData);
   const password = String(formData.get("password") ?? "");
 
   if (!username || !email || !phone) return;
@@ -147,12 +169,17 @@ export async function saveAccountAction(formData: FormData) {
 }
 
 export async function deleteAccountAction(formData: FormData) {
+  await ensureUsersTable();
+  if ((await getCurrentUserRole()) !== "admin") return;
+
   const session = await getCurrentSession();
   const id = Number(formData.get("id") ?? 0);
 
   if (!session || !id || id === session.id) return;
 
-  const [[countRow]] = await getDatabasePool().query<(RowDataPacket & { total: number })[]>("SELECT COUNT(1) AS total FROM users");
+  const [[countRow]] = await getDatabasePool().query<(RowDataPacket & { total: number })[]>(
+    "SELECT COUNT(1) AS total FROM users",
+  );
   if (Number(countRow?.total ?? 0) <= 1) return;
 
   await getDatabasePool().query("DELETE FROM users WHERE id = ? LIMIT 1", [id]);

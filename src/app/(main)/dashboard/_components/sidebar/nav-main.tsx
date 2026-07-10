@@ -38,6 +38,7 @@ import type {
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
+  readonly showCreateOrder?: boolean;
 }
 
 interface NavItemProps {
@@ -83,7 +84,7 @@ function hasSubItems(item: NavMainItem): item is NavMainParentItem {
   return Boolean(item.subItems?.length);
 }
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({ items, showCreateOrder = true }: NavMainProps) {
   const path = usePathname();
   const router = useRouter();
 
@@ -114,34 +115,41 @@ export function NavMain({ items }: NavMainProps) {
 
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupContent className="flex flex-col gap-2">
-          <SidebarMenu>
-            <SidebarMenuItem className="flex items-center gap-2">
-              <SidebarMenuButton
-                type="button"
-                tooltip={"Th\u00eam v\u00e9"}
-                className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-                onClick={handleCreateOrder}
-              >
-                <PlusCircleIcon />
-                <span>{"Th\u00eam v\u00e9"}</span>
-              </SidebarMenuButton>
-              <Button
-                size="icon"
-                className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
-                variant="outline"
-                render={
-                  <a href="https://sukien.eventhub.vn/" target="_blank" rel="noreferrer" aria-label={"M\u1edf website s\u1ef1 ki\u1ec7n"} />
-                }
-              >
-                <Globe />
-                <span className="sr-only">Xem web</span>
-              </Button>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {showCreateOrder && (
+        <SidebarGroup>
+          <SidebarGroupContent className="flex flex-col gap-2">
+            <SidebarMenu>
+              <SidebarMenuItem className="flex items-center gap-2">
+                <SidebarMenuButton
+                  type="button"
+                  tooltip={"Thêm vé"}
+                  className="min-w-8 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
+                  onClick={handleCreateOrder}
+                >
+                  <PlusCircleIcon />
+                  <span>{"Thêm vé"}</span>
+                </SidebarMenuButton>
+                <Button
+                  size="icon"
+                  className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:opacity-0"
+                  variant="outline"
+                  render={
+                    <a
+                      href="https://sukien.eventhub.vn/"
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={"Mở website sự kiện"}
+                    />
+                  }
+                >
+                  <Globe />
+                  <span className="sr-only">Xem web</span>
+                </Button>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
       {items.map((group) => (
         <SidebarGroup key={group.id}>
           {group.label && (
