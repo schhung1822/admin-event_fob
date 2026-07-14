@@ -56,7 +56,7 @@ const voucherTypeOptions = [
   { label: "Giảm phần trăm", value: "rate" },
   { label: "Monet", value: "monet" },
 ];
-const ticketClassOptions = ["GOLD", "RUBY", "VIP"];
+const ticketClassOptions = ["ALL", "STUDENT", "SLIVER", "GOLD", "VIP"];
 
 function formatMoney(value: number | null | undefined) {
   return new Intl.NumberFormat("vi-VN", {
@@ -152,7 +152,7 @@ function VoucherForm({ mode, voucher }: { mode: VoucherFormMode; voucher?: Vouch
             <Input id="number" name="number" type="number" min="0" defaultValue={voucher?.number ?? ""} placeholder="100" />
           </Field>
           <Field label="Hạng vé áp dụng" name="ticketClass">
-            <Select name="ticketClass" defaultValue={voucher?.ticketClass || "GOLD"}>
+            <Select name="ticketClass" defaultValue={voucher?.ticketClass || "ALL"}>
               <SelectTrigger id="ticketClass" className="w-full">
                 <SelectValue placeholder="Chọn hạng vé" />
               </SelectTrigger>
